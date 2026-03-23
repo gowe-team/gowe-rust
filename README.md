@@ -83,6 +83,23 @@ cargo fmt --all
 cargo test
 ```
 
+## Release (GitHub Actions)
+
+Publishing to crates.io is automated by `.github/workflows/publish-crates.yml`.
+
+Setup:
+
+1. Add repository secret `CARGO_REGISTRY_TOKEN` (crates.io API token).
+2. Bump `version` in `Cargo.toml`.
+3. Create and push a matching tag: `v<version>`.
+
+Example:
+
+```bash
+git tag v0.1.0
+git push origin v0.1.0
+```
+
 ## License
 
 See `LICENSE`.
