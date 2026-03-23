@@ -2,5 +2,7 @@
 name = "gowe"
 version = "0.1.0"
 edition = "2024"
+description = "Gowe: schema-aware wire format with stateful transport."
+license = "MIT"
 
 [dependencies]

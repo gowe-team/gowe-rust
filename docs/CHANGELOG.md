@@ -25,5 +25,9 @@ Initial public release of the Rust implementation of Gowe.
 - Tuned protocol performance in the initial release line.
 - Renamed the spec traceability document to `docs/SPEC-TEST-TRACEABILITY.md`.
 
+### Fixed
+
+- Add missing crates.io package metadata (`description`, `license`) so `cargo publish` succeeds.
+
 [unreleased]: https://github.com/gowe-team/gowe-rust/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/gowe-team/gowe-rust/releases/tag/v0.1.0
