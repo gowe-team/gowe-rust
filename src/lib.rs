@@ -5,17 +5,17 @@ pub mod protocol;
 pub mod session;
 pub mod wire;
 
-pub use error::{GoweError, Result};
+pub use error::{RecurramError, Result};
 pub use model::{Message, Schema, Value};
-pub use protocol::{GoweCodec, SessionEncoder};
+pub use protocol::{RecurramCodec, SessionEncoder};
 pub use session::{SessionOptions, UnknownReferencePolicy};
 
 pub fn encode(value: &Value) -> Result<Vec<u8>> {
-    GoweCodec::default().encode_value(value)
+    RecurramCodec::default().encode_value(value)
 }
 
 pub fn decode(bytes: &[u8]) -> Result<Value> {
-    GoweCodec::default().decode_value(bytes)
+    RecurramCodec::default().decode_value(bytes)
 }
 
 pub fn encode_with_schema(schema: &Schema, value: &Value) -> Result<Vec<u8>> {
@@ -55,7 +55,7 @@ mod tests {
                 ]),
             ),
         ]);
-        let mut codec = GoweCodec::default();
+        let mut codec = RecurramCodec::default();
         let encoded = codec.encode_value(&value).expect("encode");
         let decoded = codec.decode_value(&encoded).expect("decode");
         assert_eq!(decoded, value);
@@ -63,7 +63,7 @@ mod tests {
 
     #[test]
     fn roundtrip_all_message_kinds() {
-        let mut codec = GoweCodec::default();
+        let mut codec = RecurramCodec::default();
         codec.state.previous_message = Some(Message::Scalar(Value::U64(0)));
         let messages = vec![
             Message::Scalar(Value::U64(1)),
@@ -170,7 +170,7 @@ mod tests {
     #[test]
     fn codec_selection_uses_delta_delta_for_regular_series() {
         let value = Value::Array((0..16).map(|i| Value::I64(1_000 + (i * 10))).collect());
-        let mut codec = GoweCodec::default();
+        let mut codec = RecurramCodec::default();
         let bytes = codec.encode_value(&value).expect("encode");
         let msg = codec.decode_message(&bytes).expect("decode message");
         match msg {
@@ -185,7 +185,7 @@ mod tests {
             unknown_reference_policy: UnknownReferencePolicy::StatelessRetry,
             ..SessionOptions::default()
         };
-        let mut codec = GoweCodec::with_options(options);
+        let mut codec = RecurramCodec::with_options(options);
         let patch = Message::StatePatch {
             base_ref: BaseRef::BaseId(777),
             operations: vec![],
@@ -194,7 +194,7 @@ mod tests {
         let mut raw = Vec::new();
         raw.extend(codec.encode_message(&patch).expect("encode"));
 
-        let mut decode_codec = GoweCodec::with_options(SessionOptions {
+        let mut decode_codec = RecurramCodec::with_options(SessionOptions {
             unknown_reference_policy: UnknownReferencePolicy::StatelessRetry,
             ..SessionOptions::default()
         });
@@ -202,7 +202,7 @@ mod tests {
             .decode_message(&raw)
             .expect_err("expected retry error");
         match err {
-            GoweError::StatelessRetryRequired("base_id", 777) => {}
+            RecurramError::StatelessRetryRequired("base_id", 777) => {}
             other => panic!("unexpected error: {other:?}"),
         }
     }

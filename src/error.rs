@@ -1,7 +1,7 @@
 use core::fmt;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub enum GoweError {
+pub enum RecurramError {
     UnexpectedEof,
     InvalidKind(u8),
     InvalidTag(u8),
@@ -11,7 +11,7 @@ pub enum GoweError {
     StatelessRetryRequired(&'static str, u64),
 }
 
-impl fmt::Display for GoweError {
+impl fmt::Display for RecurramError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::UnexpectedEof => write!(f, "unexpected end of input"),
@@ -27,6 +27,6 @@ impl fmt::Display for GoweError {
     }
 }
 
-impl std::error::Error for GoweError {}
+impl std::error::Error for RecurramError {}
 
-pub type Result<T> = core::result::Result<T, GoweError>;
+pub type Result<T> = core::result::Result<T, RecurramError>;

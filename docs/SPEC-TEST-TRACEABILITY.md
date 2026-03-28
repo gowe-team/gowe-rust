@@ -1,6 +1,6 @@
 # SPEC Test Traceability (5/6/8/10/13/15/18)
 
-This file maps `gowe/SPEC.md` requirements to Rust tests in `gowe-rust/tests`.
+This file maps `recurram/SPEC.md` requirements to Rust tests in `recurram-rust/tests`.
 
 ## 5. Dynamic Profile
 

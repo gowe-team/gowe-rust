@@ -1,7 +1,7 @@
-use gowe as gowe_rust;
+use recurram as recurram_rust;
 
-use gowe_rust::{
-    GoweCodec, GoweError, SessionEncoder,
+use recurram_rust::{
+    RecurramCodec, RecurramError, SessionEncoder,
     codec::{
         decode_f64_vector, decode_i64_vector, decode_u64_vector, encode_f64_vector,
         encode_i64_vector, encode_u64_vector,
@@ -32,13 +32,13 @@ fn model_from_byte_and_display_branches() {
     assert!(ControlStreamCodec::from_byte(7).is_none());
 
     let errors = [
-        GoweError::UnexpectedEof,
-        GoweError::InvalidKind(0xFF),
-        GoweError::InvalidTag(0xFF),
-        GoweError::InvalidData("bad"),
-        GoweError::Utf8Error,
-        GoweError::UnknownReference("base_id", 3),
-        GoweError::StatelessRetryRequired("base_id", 3),
+        RecurramError::UnexpectedEof,
+        RecurramError::InvalidKind(0xFF),
+        RecurramError::InvalidTag(0xFF),
+        RecurramError::InvalidData("bad"),
+        RecurramError::Utf8Error,
+        RecurramError::UnknownReference("base_id", 3),
+        RecurramError::StatelessRetryRequired("base_id", 3),
     ];
     for err in errors {
         assert!(!err.to_string().is_empty());
@@ -48,18 +48,18 @@ fn model_from_byte_and_display_branches() {
 #[test]
 fn wire_reader_error_branches() {
     let mut r = Reader::new(&[]);
-    assert!(matches!(r.read_u8(), Err(GoweError::UnexpectedEof)));
+    assert!(matches!(r.read_u8(), Err(RecurramError::UnexpectedEof)));
 
     let too_long = vec![0x80; 11];
     let mut r = Reader::new(&too_long);
     assert!(matches!(
         r.read_varuint(),
-        Err(GoweError::InvalidData("varuint too large"))
+        Err(RecurramError::InvalidData("varuint too large"))
     ));
 
     let invalid_utf8 = vec![1, 0xFF];
     let mut r = Reader::new(&invalid_utf8);
-    assert!(matches!(r.read_string(), Err(GoweError::Utf8Error)));
+    assert!(matches!(r.read_string(), Err(RecurramError::Utf8Error)));
 
     let mut bytes = Vec::new();
     encode_varuint(9, &mut bytes);
@@ -113,7 +113,7 @@ fn codec_variants_roundtrip_and_error_path() {
 
 #[test]
 fn protocol_error_and_control_branches() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
 
     let bytes = codec
         .encode_message(&Message::Control(ControlMessage::ResetTables))
@@ -146,7 +146,7 @@ fn protocol_error_and_control_branches() {
     malformed.push(0x00);
     assert!(matches!(
         codec.decode_message(&malformed),
-        Err(GoweError::InvalidData("trailing bytes in message"))
+        Err(RecurramError::InvalidData("trailing bytes in message"))
     ));
 
     let mut bad_schema_flag = Vec::new();
@@ -154,7 +154,7 @@ fn protocol_error_and_control_branches() {
     bad_schema_flag.push(2);
     assert!(matches!(
         codec.decode_message(&bad_schema_flag),
-        Err(GoweError::InvalidData("schema flag"))
+        Err(RecurramError::InvalidData("schema flag"))
     ));
 
     let mut map_with_unknown_key_id = Vec::new();
@@ -167,7 +167,7 @@ fn protocol_error_and_control_branches() {
     map_with_unknown_key_id.push(1);
     assert!(matches!(
         codec.decode_value(&map_with_unknown_key_id),
-        Err(GoweError::UnknownReference("key_id", 77))
+        Err(RecurramError::UnknownReference("key_id", 77))
     ));
 
     let mut pd_unknown = Vec::new();
@@ -179,7 +179,7 @@ fn protocol_error_and_control_branches() {
     encode_string("x", &mut pd_unknown);
     assert!(matches!(
         codec.decode_value(&pd_unknown),
-        Err(GoweError::UnknownReference("string_id", 99))
+        Err(RecurramError::UnknownReference("string_id", 99))
     ));
 
     let mut register_shape = Vec::new();
@@ -213,13 +213,13 @@ fn protocol_error_and_control_branches() {
     bad_column_codec.push(2);
     assert!(matches!(
         codec.decode_message(&bad_column_codec),
-        Err(GoweError::InvalidData("column codec mismatch"))
+        Err(RecurramError::InvalidData("column codec mismatch"))
     ));
 }
 
 #[test]
 fn dynamic_shape_promotion_after_second_same_map_shape() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let value = Value::Map(vec![
         ("id".to_string(), Value::U64(1)),
         ("name".to_string(), Value::String("alice".to_string())),
@@ -241,11 +241,11 @@ fn dynamic_shape_promotion_after_second_same_map_shape() {
 #[test]
 fn schema_id_is_emitted_then_omitted_in_schema_context() {
     let mut enc = SessionEncoder::new(SessionOptions::default());
-    let schema = gowe_rust::model::Schema {
+    let schema = recurram_rust::model::Schema {
         schema_id: 777,
         name: "SchemaCtx".to_string(),
         fields: vec![
-            gowe_rust::model::SchemaField {
+            recurram_rust::model::SchemaField {
                 number: 1,
                 name: "id".to_string(),
                 logical_type: "u64".to_string(),
@@ -255,7 +255,7 @@ fn schema_id_is_emitted_then_omitted_in_schema_context() {
                 max: None,
                 enum_values: vec![],
             },
-            gowe_rust::model::SchemaField {
+            recurram_rust::model::SchemaField {
                 number: 2,
                 name: "name".to_string(),
                 logical_type: "string".to_string(),
@@ -302,11 +302,11 @@ fn schema_id_is_emitted_then_omitted_in_schema_context() {
 #[test]
 fn schema_mode_uses_registered_schema_and_range_packing() {
     let mut enc = SessionEncoder::new(SessionOptions::default());
-    let schema = gowe_rust::model::Schema {
+    let schema = recurram_rust::model::Schema {
         schema_id: 7,
         name: "Bound".to_string(),
         fields: vec![
-            gowe_rust::model::SchemaField {
+            recurram_rust::model::SchemaField {
                 number: 1,
                 name: "id".to_string(),
                 logical_type: "u64".to_string(),
@@ -316,7 +316,7 @@ fn schema_mode_uses_registered_schema_and_range_packing() {
                 max: Some(1100),
                 enum_values: vec![],
             },
-            gowe_rust::model::SchemaField {
+            recurram_rust::model::SchemaField {
                 number: 2,
                 name: "name".to_string(),
                 logical_type: "string".to_string(),
@@ -350,10 +350,10 @@ fn schema_mode_uses_registered_schema_and_range_packing() {
 #[test]
 fn schema_range_mode_writes_fixed_width_offset_bits() {
     let mut enc = SessionEncoder::new(SessionOptions::default());
-    let schema = gowe_rust::model::Schema {
+    let schema = recurram_rust::model::Schema {
         schema_id: 8,
         name: "RangeOnly".to_string(),
-        fields: vec![gowe_rust::model::SchemaField {
+        fields: vec![recurram_rust::model::SchemaField {
             number: 1,
             name: "n".to_string(),
             logical_type: "u64".to_string(),
@@ -394,7 +394,7 @@ fn schema_range_mode_writes_fixed_width_offset_bits() {
 
 #[test]
 fn typed_vector_length_mismatch_is_rejected() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let mut bytes = Vec::new();
     bytes.push(MessageKind::TypedVector as u8);
     bytes.push(ElementType::U64 as u8);
@@ -404,7 +404,7 @@ fn typed_vector_length_mismatch_is_rejected() {
     encode_varuint(99, &mut bytes);
     assert!(matches!(
         codec.decode_message(&bytes),
-        Err(GoweError::InvalidData("typed vector length mismatch"))
+        Err(RecurramError::InvalidData("typed vector length mismatch"))
     ));
 }
 
@@ -436,7 +436,7 @@ fn unknown_reference_stateless_retry_paths() {
         unknown_reference_policy: UnknownReferencePolicy::StatelessRetry,
         ..SessionOptions::default()
     };
-    let mut codec = GoweCodec::with_options(options);
+    let mut codec = RecurramCodec::with_options(options);
 
     let mut previous_missing = Vec::new();
     previous_missing.push(MessageKind::StatePatch as u8);
@@ -445,7 +445,7 @@ fn unknown_reference_stateless_retry_paths() {
     encode_varuint(0, &mut previous_missing);
     assert!(matches!(
         codec.decode_message(&previous_missing),
-        Err(GoweError::StatelessRetryRequired("previous_message", 0))
+        Err(RecurramError::StatelessRetryRequired("previous_message", 0))
     ));
 
     let mut base_missing = Vec::new();
@@ -456,19 +456,19 @@ fn unknown_reference_stateless_retry_paths() {
     encode_varuint(0, &mut base_missing);
     assert!(matches!(
         codec.decode_message(&base_missing),
-        Err(GoweError::StatelessRetryRequired("base_id", 1000))
+        Err(RecurramError::StatelessRetryRequired("base_id", 1000))
     ));
 
-    let mut builder = GoweCodec::default();
+    let mut builder = RecurramCodec::default();
     let dict_ref_column = Message::ColumnBatch {
         count: 1,
-        columns: vec![gowe_rust::model::Column {
+        columns: vec![recurram_rust::model::Column {
             field_id: 0,
-            null_strategy: gowe_rust::model::NullStrategy::AllPresentElided,
+            null_strategy: recurram_rust::model::NullStrategy::AllPresentElided,
             presence: None,
             codec: VectorCodec::Dictionary,
             dictionary_id: Some(77),
-            values: gowe_rust::model::TypedVectorData::String(vec!["admin".to_string()]),
+            values: recurram_rust::model::TypedVectorData::String(vec!["admin".to_string()]),
         }],
     };
     let dict_ref_bytes = builder
@@ -476,40 +476,40 @@ fn unknown_reference_stateless_retry_paths() {
         .expect("encode dict-ref column batch");
     assert!(matches!(
         codec.decode_message(&dict_ref_bytes),
-        Err(GoweError::StatelessRetryRequired("dict_id", 77))
+        Err(RecurramError::StatelessRetryRequired("dict_id", 77))
     ));
 }
 
 #[test]
 fn unknown_dict_reference_fail_fast_path() {
-    let mut encoder = GoweCodec::default();
+    let mut encoder = RecurramCodec::default();
     let msg = Message::ColumnBatch {
         count: 1,
-        columns: vec![gowe_rust::model::Column {
+        columns: vec![recurram_rust::model::Column {
             field_id: 0,
-            null_strategy: gowe_rust::model::NullStrategy::AllPresentElided,
+            null_strategy: recurram_rust::model::NullStrategy::AllPresentElided,
             presence: None,
             codec: VectorCodec::Dictionary,
             dictionary_id: Some(88),
-            values: gowe_rust::model::TypedVectorData::String(vec!["x".to_string()]),
+            values: recurram_rust::model::TypedVectorData::String(vec!["x".to_string()]),
         }],
     };
     let bytes = encoder.encode_message(&msg).expect("encode column batch");
 
-    let mut decoder = GoweCodec::default();
+    let mut decoder = RecurramCodec::default();
     assert!(matches!(
         decoder.decode_message(&bytes),
-        Err(GoweError::UnknownReference("dict_id", 88))
+        Err(RecurramError::UnknownReference("dict_id", 88))
     ));
 }
 
 #[test]
 fn register_and_use_base_snapshot_reference() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let snapshot = Message::BaseSnapshot {
         base_id: 9,
         schema_or_shape_ref: 0,
-        payload: Box::new(Message::Scalar(gowe_rust::Value::U64(10))),
+        payload: Box::new(Message::Scalar(recurram_rust::Value::U64(10))),
     };
     let bytes = codec.encode_message(&snapshot).expect("encode snapshot");
     let decoded = codec.decode_message(&bytes).expect("decode snapshot");
@@ -533,13 +533,13 @@ fn register_and_use_base_snapshot_reference() {
 
 #[test]
 fn decode_value_rejects_non_value_message_kinds() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let mut bytes = Vec::new();
     bytes.push(MessageKind::Control as u8);
     bytes.push(ControlOpcode::ResetTables as u8);
     assert!(matches!(
         codec.decode_value(&bytes),
-        Err(GoweError::InvalidData(
+        Err(RecurramError::InvalidData(
             "decode_value expects scalar/array/map/vector message"
         ))
     ));
@@ -563,14 +563,14 @@ fn public_api_wrappers_are_covered() {
         Value::U64(3),
         Value::U64(4),
     ]);
-    let encoded = gowe_rust::encode(&value).expect("encode wrapper");
-    let decoded = gowe_rust::decode(&encoded).expect("decode wrapper");
+    let encoded = recurram_rust::encode(&value).expect("encode wrapper");
+    let decoded = recurram_rust::decode(&encoded).expect("decode wrapper");
     assert_eq!(decoded, value);
 
-    let schema = gowe_rust::model::Schema {
+    let schema = recurram_rust::model::Schema {
         schema_id: 1,
         name: "S".to_string(),
-        fields: vec![gowe_rust::model::SchemaField {
+        fields: vec![recurram_rust::model::SchemaField {
             number: 1,
             name: "id".to_string(),
             logical_type: "u64".to_string(),
@@ -582,13 +582,13 @@ fn public_api_wrappers_are_covered() {
         }],
     };
     let obj = Value::Map(vec![("id".to_string(), Value::U64(10))]);
-    let schema_bytes = gowe_rust::encode_with_schema(&schema, &obj).expect("schema wrapper");
+    let schema_bytes = recurram_rust::encode_with_schema(&schema, &obj).expect("schema wrapper");
     assert!(!schema_bytes.is_empty());
 
-    let batch = gowe_rust::encode_batch(&[obj.clone(), obj.clone()]).expect("batch wrapper");
+    let batch = recurram_rust::encode_batch(&[obj.clone(), obj.clone()]).expect("batch wrapper");
     assert!(!batch.is_empty());
 
-    let mut session = gowe_rust::create_session_encoder(SessionOptions::default());
+    let mut session = recurram_rust::create_session_encoder(SessionOptions::default());
     let bytes = session.encode(&obj).expect("session encode");
     assert!(!bytes.is_empty());
 }
@@ -601,7 +601,7 @@ fn value_scalar_predicate_is_covered() {
 
 #[test]
 fn protocol_decode_value_for_scalar_array_typed_vector_and_shaped_object() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
 
     let scalar_bytes = codec
         .encode_message(&Message::Scalar(Value::I64(-10)))
@@ -636,10 +636,10 @@ fn protocol_decode_value_for_scalar_array_typed_vector_and_shaped_object() {
     let decoded = codec.decode_value(&shaped_bytes).expect("decode shaped");
     assert_eq!(decoded, Value::Map(vec![("id".to_string(), Value::U64(5))]));
 
-    let typed = Message::TypedVector(gowe_rust::model::TypedVector {
+    let typed = Message::TypedVector(recurram_rust::model::TypedVector {
         element_type: ElementType::Value,
         codec: VectorCodec::Plain,
-        data: gowe_rust::model::TypedVectorData::Value(vec![Value::U64(1), Value::U64(2)]),
+        data: recurram_rust::model::TypedVectorData::Value(vec![Value::U64(1), Value::U64(2)]),
     });
     let typed_bytes = codec.encode_message(&typed).expect("encode typed");
     assert_eq!(
@@ -650,7 +650,7 @@ fn protocol_decode_value_for_scalar_array_typed_vector_and_shaped_object() {
 
 #[test]
 fn try_make_typed_vector_paths_for_all_primitive_families() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
 
     let u = Value::Array(vec![
         Value::U64(1),
@@ -685,7 +685,7 @@ fn try_make_typed_vector_paths_for_all_primitive_families() {
 
 #[test]
 fn encode_decode_all_control_message_variants() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let msgs = vec![
         Message::Control(ControlMessage::RegisterKeys(vec![
             "id".to_string(),
@@ -709,8 +709,8 @@ fn encode_decode_all_control_message_variants() {
     let reg_shape = Message::Control(ControlMessage::RegisterShape {
         shape_id: 0,
         keys: vec![
-            gowe_rust::model::KeyRef::Literal("id".to_string()),
-            gowe_rust::model::KeyRef::Literal("name".to_string()),
+            recurram_rust::model::KeyRef::Literal("id".to_string()),
+            recurram_rust::model::KeyRef::Literal("name".to_string()),
         ],
     });
     let bytes = codec.encode_message(&reg_shape).expect("encode reg shape");
@@ -830,7 +830,7 @@ fn wire_reader_position_and_zigzag_reader_paths() {
 
 #[test]
 fn session_shape_table_existing_registration_path() {
-    let mut state = gowe_rust::session::SessionState::default();
+    let mut state = recurram_rust::session::SessionState::default();
     let keys = vec!["id".to_string(), "name".to_string()];
     let id0 = state.shape_table.register(keys.clone());
     let id1 = state.shape_table.register(keys.clone());
@@ -844,7 +844,7 @@ fn session_shape_table_existing_registration_path() {
 
 #[test]
 fn shaped_object_presence_preserves_sparse_fields() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let value1 = Value::Map(vec![
         ("id".to_string(), Value::U64(1)),
         ("name".to_string(), Value::String("alice".to_string())),
@@ -864,10 +864,10 @@ fn shaped_object_presence_preserves_sparse_fields() {
 #[test]
 fn encode_with_schema_rejects_missing_required_field() {
     let mut encoder = SessionEncoder::new(SessionOptions::default());
-    let schema = gowe_rust::model::Schema {
+    let schema = recurram_rust::model::Schema {
         schema_id: 99,
         name: "Required".to_string(),
-        fields: vec![gowe_rust::model::SchemaField {
+        fields: vec![recurram_rust::model::SchemaField {
             number: 1,
             name: "id".to_string(),
             logical_type: "u64".to_string(),
@@ -881,13 +881,13 @@ fn encode_with_schema_rejects_missing_required_field() {
     let value = Value::Map(vec![]);
     assert!(matches!(
         encoder.encode_with_schema(&schema, &value),
-        Err(GoweError::InvalidData("missing required schema field"))
+        Err(RecurramError::InvalidData("missing required schema field"))
     ));
 }
 
 #[test]
 fn inline_enum_control_is_applied_to_map_string_field() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let control = Message::Control(ControlMessage::PromoteStringFieldToEnum {
         field_identity: "role".to_string(),
         values: vec!["admin".to_string(), "viewer".to_string()],
@@ -946,20 +946,20 @@ fn patch_threshold_prefers_full_message_when_change_ratio_is_high() {
 
 #[test]
 fn invalid_presence_flag_is_rejected() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let mut bytes = Vec::new();
     bytes.push(MessageKind::ShapedObject as u8);
     encode_varuint(0, &mut bytes);
     bytes.push(3);
     assert!(matches!(
         codec.decode_message(&bytes),
-        Err(GoweError::InvalidData("presence flag"))
+        Err(RecurramError::InvalidData("presence flag"))
     ));
 }
 
 #[test]
 fn control_stream_rle_roundtrip() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let msg = Message::ControlStream {
         codec: ControlStreamCodec::Rle,
         payload: vec![1, 1, 1, 2, 2, 3, 3, 3, 3],

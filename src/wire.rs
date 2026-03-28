@@ -1,4 +1,4 @@
-use crate::error::{GoweError, Result};
+use crate::error::{RecurramError, Result};
 
 pub fn encode_varuint(mut value: u64, out: &mut Vec<u8>) {
     loop {
@@ -70,7 +70,7 @@ impl<'a> Reader<'a> {
         let byte = *self
             .input
             .get(self.offset)
-            .ok_or(GoweError::UnexpectedEof)?;
+            .ok_or(RecurramError::UnexpectedEof)?;
         self.offset += 1;
         Ok(byte)
     }
@@ -79,11 +79,11 @@ impl<'a> Reader<'a> {
         let end = self
             .offset
             .checked_add(len)
-            .ok_or(GoweError::InvalidData("offset overflow"))?;
+            .ok_or(RecurramError::InvalidData("offset overflow"))?;
         let slice = self
             .input
             .get(self.offset..end)
-            .ok_or(GoweError::UnexpectedEof)?;
+            .ok_or(RecurramError::UnexpectedEof)?;
         self.offset = end;
         Ok(slice)
     }
@@ -93,7 +93,7 @@ impl<'a> Reader<'a> {
         let mut result = 0u64;
         loop {
             if shift >= 64 {
-                return Err(GoweError::InvalidData("varuint too large"));
+                return Err(RecurramError::InvalidData("varuint too large"));
             }
             let byte = self.read_u8()?;
             result |= ((byte & 0x7F) as u64) << shift;
@@ -116,7 +116,7 @@ impl<'a> Reader<'a> {
 
     pub fn read_string(&mut self) -> Result<String> {
         let bytes = self.read_bytes()?;
-        String::from_utf8(bytes).map_err(|_| GoweError::Utf8Error)
+        String::from_utf8(bytes).map_err(|_| RecurramError::Utf8Error)
     }
 
     pub fn read_bitmap(&mut self) -> Result<Vec<bool>> {

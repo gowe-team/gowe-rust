@@ -1,5 +1,5 @@
 use crate::{
-    error::{GoweError, Result},
+    error::{RecurramError, Result},
     model::VectorCodec,
     wire::{Reader, decode_zigzag, encode_varuint, encode_zigzag},
 };
@@ -120,7 +120,7 @@ pub fn decode_u64_vector(reader: &mut Reader<'_>, codec: VectorCodec) -> Result<
                 .into_iter()
                 .map(|v| {
                     v.checked_add(min)
-                        .ok_or(GoweError::InvalidData("u64 FOR overflow"))
+                        .ok_or(RecurramError::InvalidData("u64 FOR overflow"))
                 })
                 .collect()
         }
@@ -205,7 +205,7 @@ fn decode_u64_direct_bitpack(reader: &mut Reader<'_>) -> Result<Vec<u64>> {
         return Ok(Vec::new());
     }
     if width == 0 || width > 64 {
-        return Err(GoweError::InvalidData("bitpack width"));
+        return Err(RecurramError::InvalidData("bitpack width"));
     }
     unpack_u64_values(reader, len, width)
 }
@@ -366,7 +366,7 @@ fn decode_u64_simple8b_inner(reader: &mut Reader<'_>) -> Result<Vec<u64>> {
         return Ok(out);
     }
     if mode != 1 {
-        return Err(GoweError::InvalidData("simple8b mode"));
+        return Err(RecurramError::InvalidData("simple8b mode"));
     }
 
     let mut out = Vec::with_capacity(len);
@@ -400,7 +400,7 @@ fn decode_u64_simple8b_inner(reader: &mut Reader<'_>) -> Result<Vec<u64>> {
                     shift += width as u32;
                 }
             }
-            _ => return Err(GoweError::InvalidData("simple8b selector")),
+            _ => return Err(RecurramError::InvalidData("simple8b selector")),
         }
     }
     Ok(out)
@@ -431,7 +431,7 @@ fn undelta(values: Vec<i64>) -> Result<Vec<i64>> {
         }
         let next = prev
             .checked_add(value)
-            .ok_or(GoweError::InvalidData("delta overflow"))?;
+            .ok_or(RecurramError::InvalidData("delta overflow"))?;
         out.push(next);
         prev = next;
     }
@@ -580,7 +580,7 @@ fn decode_xor_float(reader: &mut Reader<'_>) -> Result<Vec<f64>> {
             let width = reader.read_varuint()?;
             let payload = reader.read_varuint()?;
             if leading + trailing + width > 64 {
-                return Err(GoweError::InvalidData("xor-float bit widths"));
+                return Err(RecurramError::InvalidData("xor-float bit widths"));
             }
             let x = if width == 64 {
                 payload
@@ -619,7 +619,7 @@ fn decode_i64_direct_bitpack(reader: &mut Reader<'_>) -> Result<Vec<i64>> {
         return Ok(Vec::new());
     }
     if width == 0 || width > 64 {
-        return Err(GoweError::InvalidData("bitpack width"));
+        return Err(RecurramError::InvalidData("bitpack width"));
     }
     let encoded = unpack_u64_values(reader, len, width)?;
     Ok(encoded.into_iter().map(decode_zigzag).collect())
@@ -658,24 +658,24 @@ fn decode_i64_delta_delta(reader: &mut Reader<'_>) -> Result<Vec<i64>> {
     let first_delta = decode_zigzag(reader.read_varuint()?);
     let dd = decode_i64_direct_bitpack(reader)?;
     if dd.len() != len.saturating_sub(2) {
-        return Err(GoweError::InvalidData("delta-delta length"));
+        return Err(RecurramError::InvalidData("delta-delta length"));
     }
     let mut out = Vec::with_capacity(len);
     out.push(first);
     let mut prev = first;
     let second = prev
         .checked_add(first_delta)
-        .ok_or(GoweError::InvalidData("delta-delta overflow"))?;
+        .ok_or(RecurramError::InvalidData("delta-delta overflow"))?;
     out.push(second);
     prev = second;
     let mut prev_delta = first_delta;
     for ddv in dd {
         let d = prev_delta
             .checked_add(ddv)
-            .ok_or(GoweError::InvalidData("delta-delta overflow"))?;
+            .ok_or(RecurramError::InvalidData("delta-delta overflow"))?;
         let next = prev
             .checked_add(d)
-            .ok_or(GoweError::InvalidData("delta-delta overflow"))?;
+            .ok_or(RecurramError::InvalidData("delta-delta overflow"))?;
         out.push(next);
         prev = next;
         prev_delta = d;
@@ -712,7 +712,7 @@ fn unpack_u64_values(reader: &mut Reader<'_>, len: usize, width: u8) -> Result<V
         while acc_bits < width as u32 {
             let b = *bytes
                 .get(idx)
-                .ok_or(GoweError::InvalidData("bitpack underflow"))?;
+                .ok_or(RecurramError::InvalidData("bitpack underflow"))?;
             idx += 1;
             acc |= (b as u128) << acc_bits;
             acc_bits += 8;

@@ -1,14 +1,14 @@
-use gowe as gowe_rust;
+use recurram as recurram_rust;
 
-use gowe_rust::{
-    GoweCodec, GoweError,
+use recurram_rust::{
+    RecurramCodec, RecurramError,
     model::{ControlMessage, ControlStreamCodec, KeyRef, Message, MessageKind, Value},
     wire::Reader,
 };
 
 #[test]
 fn control_stream_roundtrips_for_all_declared_codecs() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let payload = vec![0, 0, 1, 1, 1, 2, 3, 3, 3, 3, 4];
     for c in [
         ControlStreamCodec::Plain,
@@ -28,7 +28,7 @@ fn control_stream_roundtrips_for_all_declared_codecs() {
 }
 
 fn encoded_control_stream_len(codec: ControlStreamCodec, payload: Vec<u8>) -> usize {
-    let mut codec_impl = GoweCodec::default();
+    let mut codec_impl = RecurramCodec::default();
     let msg = Message::ControlStream { codec, payload };
     codec_impl
         .encode_message(&msg)
@@ -60,7 +60,7 @@ fn control_stream_bitpack_huffman_fse_compact_repetitive_payloads() {
 
 #[test]
 fn control_stream_fse_uses_fse_frame_mode() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let payload: Vec<u8> = (0..512).map(|idx| (idx % 4) as u8).collect();
     let msg = Message::ControlStream {
         codec: ControlStreamCodec::Fse,
@@ -85,7 +85,7 @@ fn control_stream_fse_uses_fse_frame_mode() {
 
 #[test]
 fn register_shape_with_key_ids_roundtrips() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
 
     let reg_keys = Message::Control(ControlMessage::RegisterKeys(vec![
         "id".to_string(),
@@ -128,7 +128,7 @@ fn register_shape_with_key_ids_roundtrips() {
 
 #[test]
 fn reset_state_clears_shape_resolution() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
 
     let reg_shape = Message::Control(ControlMessage::RegisterShape {
         shape_id: 7,
@@ -159,5 +159,5 @@ fn reset_state_clears_shape_resolution() {
     let err = codec
         .decode_value(&shaped_bytes)
         .expect_err("shape should be unknown");
-    assert!(matches!(err, GoweError::UnknownReference("shape_id", 7)));
+    assert!(matches!(err, RecurramError::UnknownReference("shape_id", 7)));
 }

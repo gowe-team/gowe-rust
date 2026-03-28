@@ -1,7 +1,7 @@
-use gowe as gowe_rust;
+use recurram as recurram_rust;
 
-use gowe_rust::{
-    GoweError,
+use recurram_rust::{
+    RecurramError,
     codec::{
         decode_f64_vector, decode_i64_vector, decode_u64_vector, encode_f64_vector,
         encode_i64_vector, encode_u64_vector,
@@ -57,7 +57,7 @@ fn for_u64_overflow_is_rejected() {
     let mut reader = Reader::new(&bytes);
     let err =
         decode_u64_vector(&mut reader, VectorCodec::ForBitpack).expect_err("overflow expected");
-    assert!(matches!(err, GoweError::InvalidData("u64 FOR overflow")));
+    assert!(matches!(err, RecurramError::InvalidData("u64 FOR overflow")));
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn direct_bitpack_invalid_width_is_rejected() {
     let mut reader = Reader::new(&bytes);
     let err = decode_i64_vector(&mut reader, VectorCodec::DirectBitpack)
         .expect_err("invalid width expected");
-    assert!(matches!(err, GoweError::InvalidData("bitpack width")));
+    assert!(matches!(err, RecurramError::InvalidData("bitpack width")));
 }
 
 #[test]

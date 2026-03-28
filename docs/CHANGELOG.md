@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [0.1.0] - 2026-03-23
 
-Initial public release of the Rust implementation of Gowe.
+Initial public release of the Rust implementation of Recurram.
 
 ### Added
 
@@ -29,5 +29,5 @@ Initial public release of the Rust implementation of Gowe.
 
 - Add missing crates.io package metadata (`description`, `license`) so `cargo publish` succeeds.
 
-[unreleased]: https://github.com/gowe-team/gowe-rust/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/gowe-team/gowe-rust/releases/tag/v0.1.0
+[unreleased]: https://github.com/recurram-team/recurram-rust/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/recurram-team/recurram-rust/releases/tag/v0.1.0

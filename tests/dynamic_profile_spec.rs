@@ -1,7 +1,7 @@
-use gowe as gowe_rust;
+use recurram as recurram_rust;
 
-use gowe_rust::{
-    GoweCodec,
+use recurram_rust::{
+    RecurramCodec,
     model::{ControlMessage, KeyRef, Message, MessageKind, StringMode, Value},
 };
 
@@ -13,7 +13,7 @@ fn scalar_string_mode(bytes: &[u8]) -> u8 {
 
 #[test]
 fn shape_promotes_after_second_three_field_map() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let value = Value::Map(vec![
         ("id".to_string(), Value::U64(1)),
         ("name".to_string(), Value::String("alice".to_string())),
@@ -35,7 +35,7 @@ fn shape_promotes_after_second_three_field_map() {
 
 #[test]
 fn two_field_map_keeps_map_and_uses_key_ids() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let value = Value::Map(vec![
         ("id".to_string(), Value::U64(1)),
         ("name".to_string(), Value::String("alice".to_string())),
@@ -66,7 +66,7 @@ fn two_field_map_keeps_map_and_uses_key_ids() {
 
 #[test]
 fn typed_vector_threshold_is_applied() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
 
     let short = Value::Array(vec![Value::I64(1), Value::I64(2), Value::I64(3)]);
     let short_bytes = codec.encode_value(&short).expect("encode short");
@@ -86,7 +86,7 @@ fn typed_vector_threshold_is_applied() {
 
 #[test]
 fn string_modes_empty_ref_and_prefix_delta_are_used() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
 
     let empty = codec
         .encode_value(&Value::String(String::new()))
@@ -114,7 +114,7 @@ fn string_modes_empty_ref_and_prefix_delta_are_used() {
 
 #[test]
 fn reset_tables_clears_string_interning() {
-    let mut codec = GoweCodec::default();
+    let mut codec = RecurramCodec::default();
     let _ = codec
         .encode_value(&Value::String("ephemeral".to_string()))
         .expect("encode before reset");

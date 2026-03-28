@@ -1,6 +1,6 @@
-# Gowe (Rust)
+# Recurram (Rust)
 
-Rust implementation of the Gowe wire format and session-aware encoder/decoder.
+Rust implementation of the Recurram wire format and session-aware encoder/decoder.
 
 ## What this crate provides
 
@@ -21,27 +21,27 @@ From GitHub:
 
 ```toml
 [dependencies]
-gowe = { git = "https://github.com/gowe-team/gowe-rust.git" }
+recurram = { git = "https://github.com/recurram-team/recurram-rust.git" }
 ```
 
 From crates.io (if/when published):
 
 ```toml
 [dependencies]
-gowe = "0.1"
+recurram = "0.1"
 ```
 
 From a local path:
 
 ```toml
 [dependencies]
-gowe = { path = "./gowe-rust" }
+recurram = { path = "./recurram-rust" }
 ```
 
 ## Quick start
 
 ```rust
-use gowe::{decode, encode, Value};
+use recurram::{decode, encode, Value};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let value = Value::Map(vec![
@@ -59,7 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 ## Session encoder example
 
 ```rust
-use gowe::{create_session_encoder, SessionOptions, Value};
+use recurram::{create_session_encoder, SessionOptions, Value};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut enc = create_session_encoder(SessionOptions::default());
