@@ -118,7 +118,9 @@ impl RecurramCodec {
     fn reference_error(&self, kind: &'static str, id: u64) -> RecurramError {
         match self.state.options.unknown_reference_policy {
             UnknownReferencePolicy::FailFast => RecurramError::UnknownReference(kind, id),
-            UnknownReferencePolicy::StatelessRetry => RecurramError::StatelessRetryRequired(kind, id),
+            UnknownReferencePolicy::StatelessRetry => {
+                RecurramError::StatelessRetryRequired(kind, id)
+            }
         }
     }
 
@@ -462,7 +464,8 @@ impl RecurramCodec {
 
     fn read_message(&mut self, reader: &mut Reader<'_>) -> Result<Message> {
         let kind_byte = reader.read_u8()?;
-        let kind = MessageKind::from_byte(kind_byte).ok_or(RecurramError::InvalidKind(kind_byte))?;
+        let kind =
+            MessageKind::from_byte(kind_byte).ok_or(RecurramError::InvalidKind(kind_byte))?;
         let message = match kind {
             MessageKind::Scalar => Message::Scalar(self.read_value(reader)?),
             MessageKind::Array => {
@@ -548,12 +551,9 @@ impl RecurramCodec {
                 let encoding_mode = reader.read_u8()?;
                 let mut fields = Vec::with_capacity(len);
                 if encoding_mode == 1 {
-                    let effective_schema_id =
-                        schema_id
-                            .or(self.state.last_schema_id)
-                            .ok_or(RecurramError::InvalidData(
-                                "schema object requires schema id in context",
-                            ))?;
+                    let effective_schema_id = schema_id.or(self.state.last_schema_id).ok_or(
+                        RecurramError::InvalidData("schema object requires schema id in context"),
+                    )?;
                     let schema = self
                         .state
                         .schemas
@@ -844,8 +844,9 @@ impl RecurramCodec {
                     }
                     StringMode::InlineEnum => {
                         let code = reader.read_varuint()? as usize;
-                        let identity = field_identity
-                            .ok_or(RecurramError::InvalidData("inline enum without field context"))?;
+                        let identity = field_identity.ok_or(RecurramError::InvalidData(
+                            "inline enum without field context",
+                        ))?;
                         let values = self
                             .state
                             .field_enums
@@ -1327,7 +1328,9 @@ impl RecurramCodec {
                             .ok_or(RecurramError::InvalidData("dictionary fallback"))?;
                         let payload = reader.read_bytes()?;
                         if dictionary_payload_hash(&payload) != hash {
-                            return Err(RecurramError::InvalidData("dictionary profile hash mismatch"));
+                            return Err(RecurramError::InvalidData(
+                                "dictionary profile hash mismatch",
+                            ));
                         }
                         self.state.dictionaries.insert(id, payload);
                         self.state.dictionary_profiles.insert(
@@ -1812,7 +1815,9 @@ impl RecurramCodec {
                     };
                     match &mut fields[idx] {
                         Value::Array(dst) => dst.truncate(keep),
-                        _ => return Err(RecurramError::InvalidData("patch truncate type mismatch")),
+                        _ => {
+                            return Err(RecurramError::InvalidData("patch truncate type mismatch"));
+                        }
                     }
                 }
                 PatchOpcode::StringRef | PatchOpcode::PrefixDelta => {
@@ -1891,7 +1896,9 @@ impl SessionEncoder {
                         if let Some(default) = &field.default_value {
                             fields.push(default.clone());
                         } else {
-                            return Err(RecurramError::InvalidData("missing required schema field"));
+                            return Err(RecurramError::InvalidData(
+                                "missing required schema field",
+                            ));
                         }
                     }
                 }
@@ -2067,7 +2074,9 @@ fn schema_present_field_indices(schema: &Schema, presence: Option<&[bool]>) -> R
     if let Some(bits) = presence
         && bits.len() != optional_total
     {
-        return Err(RecurramError::InvalidData("schema optional presence length"));
+        return Err(RecurramError::InvalidData(
+            "schema optional presence length",
+        ));
     }
     let mut indices = Vec::new();
     let mut optional_idx = 0usize;
@@ -2244,7 +2253,9 @@ fn entries_to_map(entries: Vec<MapEntry>, state: &SessionState) -> Result<Vec<(S
                 .key_table
                 .get_value(id)
                 .ok_or(match state.options.unknown_reference_policy {
-                    UnknownReferencePolicy::FailFast => RecurramError::UnknownReference("key_id", id),
+                    UnknownReferencePolicy::FailFast => {
+                        RecurramError::UnknownReference("key_id", id)
+                    }
                     UnknownReferencePolicy::StatelessRetry => {
                         RecurramError::StatelessRetryRequired("key_id", id)
                     }
@@ -2752,7 +2763,9 @@ fn rle_decode_bytes(input: &[u8]) -> Result<Vec<u8>> {
         out.extend(std::iter::repeat_n(byte, len));
     }
     if !reader.is_eof() {
-        return Err(RecurramError::InvalidData("control stream rle trailing bytes"));
+        return Err(RecurramError::InvalidData(
+            "control stream rle trailing bytes",
+        ));
     }
     Ok(out)
 }
@@ -2908,9 +2921,9 @@ fn control_huffman_decode_bytes(input: &[u8]) -> Result<Vec<u8>> {
                             break;
                         }
                         HuffNode::Internal { left, right } => {
-                            let byte = *bitstream.get(byte_idx).ok_or(RecurramError::InvalidData(
-                                "control stream huffman underflow",
-                            ))?;
+                            let byte = *bitstream.get(byte_idx).ok_or(
+                                RecurramError::InvalidData("control stream huffman underflow"),
+                            )?;
                             let bit = (byte >> bit_idx) & 1;
                             bit_idx += 1;
                             if bit_idx == 8 {
@@ -3039,7 +3052,9 @@ fn control_fse_frame_decode(input: &[u8]) -> Result<Vec<u8>> {
     let len = reader.read_varuint()? as usize;
     let used = reader.read_varuint()? as usize;
     if used > 256 || used > table_size as usize {
-        return Err(RecurramError::InvalidData("control stream fse used symbols"));
+        return Err(RecurramError::InvalidData(
+            "control stream fse used symbols",
+        ));
     }
 
     let mut freqs = [0u16; 256];
@@ -3057,8 +3072,8 @@ fn control_fse_frame_decode(input: &[u8]) -> Result<Vec<u8>> {
         if freq == 0 || freq > table_size as u64 {
             return Err(RecurramError::InvalidData("control stream fse freq"));
         }
-        let freq_u16 =
-            u16::try_from(freq).map_err(|_| RecurramError::InvalidData("control stream fse freq"))?;
+        let freq_u16 = u16::try_from(freq)
+            .map_err(|_| RecurramError::InvalidData("control stream fse freq"))?;
         freqs[symbol] = freq_u16;
         sum = sum
             .checked_add(u32::from(freq_u16))
@@ -3101,9 +3116,9 @@ fn control_fse_frame_decode(input: &[u8]) -> Result<Vec<u8>> {
     let mut out = Vec::with_capacity(len);
     for _ in 0..len {
         let slot = (state & mask) as usize;
-        let symbol = *decode_table
-            .get(slot)
-            .ok_or(RecurramError::InvalidData("control stream fse decode table"))?;
+        let symbol = *decode_table.get(slot).ok_or(RecurramError::InvalidData(
+            "control stream fse decode table",
+        ))?;
         out.push(symbol);
 
         let freq = u32::from(freqs[symbol as usize]);
@@ -3132,7 +3147,9 @@ fn control_fse_frame_decode(input: &[u8]) -> Result<Vec<u8>> {
     }
 
     if renorm[..renorm_idx].iter().any(|byte| *byte != 0) {
-        return Err(RecurramError::InvalidData("control stream fse trailing bytes"));
+        return Err(RecurramError::InvalidData(
+            "control stream fse trailing bytes",
+        ));
     }
     Ok(out)
 }
@@ -3290,9 +3307,9 @@ fn unpack_fixed_width_u8(bytes: &[u8], len: usize, width: u8) -> Result<Vec<u8>>
     let mask = (1u32 << width) - 1;
     while out.len() < len {
         while acc_bits < width {
-            let b = *bytes
-                .get(idx)
-                .ok_or(RecurramError::InvalidData("control stream bitpack underflow"))?;
+            let b = *bytes.get(idx).ok_or(RecurramError::InvalidData(
+                "control stream bitpack underflow",
+            ))?;
             idx += 1;
             acc |= u32::from(b) << acc_bits;
             acc_bits += 8;
@@ -3460,7 +3477,9 @@ fn merge_template_columns(
         }
     }
     if changed_iter.next().is_some() {
-        return Err(RecurramError::InvalidData("template changed column overflow"));
+        return Err(RecurramError::InvalidData(
+            "template changed column overflow",
+        ));
     }
     Ok(out)
 }

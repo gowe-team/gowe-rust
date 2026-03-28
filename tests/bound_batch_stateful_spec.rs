@@ -416,7 +416,9 @@ fn invalid_dictionary_profile_hash_is_rejected() {
     let mut dec = RecurramCodec::default();
     assert!(matches!(
         dec.decode_message(&bytes),
-        Err(RecurramError::InvalidData("dictionary profile hash mismatch"))
+        Err(RecurramError::InvalidData(
+            "dictionary profile hash mismatch"
+        ))
     ));
 }
 
