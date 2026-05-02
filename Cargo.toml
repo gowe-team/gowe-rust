@@ -1,6 +1,6 @@
 [package]
 name = "recurram"
-version = "0.1.0"
+version = "2.0.0"
 edition = "2024"
 description = "Recurram: schema-aware wire format with stateful transport."
 license = "MIT"

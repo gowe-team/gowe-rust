@@ -2,6 +2,8 @@
 
 Rust implementation of the Recurram wire format and session-aware encoder/decoder.
 
+This crate's default `encode` / `decode` API targets Recurram v2.
+
 ## What this crate provides
 
 - Dynamic encoding/decoding (`encode`, `decode`)

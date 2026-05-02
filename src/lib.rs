@@ -3,6 +3,7 @@ pub mod error;
 pub mod model;
 pub mod protocol;
 pub mod session;
+pub mod v2;
 pub mod wire;
 
 pub use error::{RecurramError, Result};
@@ -11,11 +12,11 @@ pub use protocol::{RecurramCodec, SessionEncoder};
 pub use session::{SessionOptions, UnknownReferencePolicy};
 
 pub fn encode(value: &Value) -> Result<Vec<u8>> {
-    RecurramCodec::default().encode_value(value)
+    v2::encode(value)
 }
 
 pub fn decode(bytes: &[u8]) -> Result<Value> {
-    RecurramCodec::default().decode_value(bytes)
+    v2::decode(bytes)
 }
 
 pub fn encode_with_schema(schema: &Schema, value: &Value) -> Result<Vec<u8>> {
