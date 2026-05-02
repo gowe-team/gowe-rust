@@ -10,6 +10,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 - GitHub issue templates (feature request and bug report) and pull request template.
 
+### Fixed
+
+- Fixed O(n²) key lookup in `v2::encode_array`: each row previously used `entries.iter().find()` to locate field values by name, but `detect_shape_keys` already guarantees key order matches the shape, so direct iteration is now used instead.
+
 ## [2.0.0] - 2026-05-01
 
 ### Added
